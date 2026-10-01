@@ -99,4 +99,91 @@ public final class Deck {
     public int totalSize() {
         return drawPile.size() + discardPile.size();
     }
+
+    /**
+     * Находит первую карту, равную указанной (по рангу и масти),
+     * в колоде или в сбросе, и заменяет её новой.
+     *
+     * @return true, если замена выполнена
+     */
+    public boolean replace(Card target, Card replacement) {
+        for (int i = 0; i < drawPile.size(); i++) {
+            if (drawPile.get(i).equals(target)) {
+                drawPile.set(i, replacement);
+                return true;
+            }
+        }
+        for (int i = 0; i < discardPile.size(); i++) {
+            if (discardPile.get(i).equals(target)) {
+                discardPile.set(i, replacement);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Убирает карту из колоды навсегда (таро Tower/Destroy). */
+    public boolean remove(Card target) {
+        int i = drawPile.indexOf(target);
+        if (i >= 0) {
+            drawPile.remove(i);
+            return true;
+        }
+        int j = discardPile.indexOf(target);
+        if (j >= 0) {
+            discardPile.remove(j);
+            return true;
+        }
+        return false;
+    }
+
+    /** Количество копий карты в колоде (издание Crowded). */
+    public int count(Card target) {
+        int n = 0;
+        for (Card c : drawPile) {
+            if (c.equals(target)) {
+                n++;
+            }
+        }
+        for (Card c : discardPile) {
+            if (c.equals(target)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** Все карты, кроме указанных (для таро, выбирающих случайную карту). */
+    public List<Card> allCards() {
+        List<Card> all = new ArrayList<>(drawPile);
+        all.addAll(discardPile);
+        return all;
+    }
+
+    /** Применяет преобразование к каждой карте (таро The Hanged Man). */
+    public void transformAll(java.util.function.UnaryOperator<Card> op) {
+        for (int i = 0; i < drawPile.size(); i++) {
+            drawPile.set(i, op.apply(drawPile.get(i)));
+        }
+        for (int i = 0; i < discardPile.size(); i++) {
+            discardPile.set(i, op.apply(discardPile.get(i)));
+        }
+    }
+
+    /** Восстанавливает колоду из плоского списка (десериализация). */
+    public void setAll(List<Card> cards) {
+        drawPile.clear();
+        discardPile.clear();
+        drawPile.addAll(cards);
+    }
+
+    /** Прямой доступ к колоде при восстановлении из снимка. */
+    public List<Card> getDrawForRestore() {
+        return drawPile;
+    }
+
+    /** Прямой доступ к сбросу при восстановлении из снимка. */
+    public List<Card> getDiscardForRestore() {
+        return discardPile;
+    }
 }

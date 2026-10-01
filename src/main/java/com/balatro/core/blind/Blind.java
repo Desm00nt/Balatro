@@ -12,10 +12,14 @@ public final class Blind {
     private final int scoreTarget;
 
     public Blind(int ante, BlindType type, int reward) {
+        this(ante, type, reward, calculateTarget(ante, type));
+    }
+
+    public Blind(int ante, BlindType type, int reward, int scoreTarget) {
         this.ante = ante;
         this.type = type;
         this.reward = reward;
-        this.scoreTarget = calculateTarget(ante, type);
+        this.scoreTarget = scoreTarget;
     }
 
     /** Требование к очкам для заданного ante и типа слепого. */
@@ -44,6 +48,12 @@ public final class Blind {
 
     public String displayName() {
         return "Ante " + ante + " — " + type.displayName();
+    }
+
+    /** Копия слепого с другим требованием (масштаб босса). */
+    public Blind withTarget(int newTarget) {
+        Blind copy = new Blind(ante, type, reward);
+        return new Blind(ante, type, reward, Math.max(1, newTarget));
     }
 
     @Override

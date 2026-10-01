@@ -1,8 +1,11 @@
 package com.balatro.command;
 
 import com.balatro.BalatroMod;
+import com.balatro.core.blind.BossRules;
+import com.balatro.core.run.RunPhase;
 import com.balatro.core.run.RunState;
 import com.balatro.core.run.StartingDeck;
+import com.balatro.net.BalatroNetworking;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -41,6 +44,10 @@ public final class BalatroCommand {
                                         StringArgumentType.getString(ctx, "deck")))))
                 .then(Commands.literal("stop")
                         .executes(ctx -> stop(ctx.getSource())))
+                .then(Commands.literal("open")
+                        .executes(ctx -> open(ctx.getSource())))
+                .then(Commands.literal("shop")
+                        .executes(ctx -> openShop(ctx.getSource())))
                 .then(Commands.literal("status")
                         .executes(ctx -> status(ctx.getSource())))
                 .then(Commands.literal("decks")
@@ -83,6 +90,43 @@ public final class BalatroCommand {
         return 1;
     }
 
+    /** Открывает игровой стол. */
+    private static int open(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Команда доступна только игроку"));
+            return 0;
+        }
+        RunState run = BalatroMod.runOf(player);
+        if (run == null) {
+            source.sendFailure(Component.literal("Активного забега нет. "
+                    + "Начните командой /balatro start"));
+            return 0;
+        }
+        BalatroNetworking.sync(player);
+        BalatroNetworking.openScreen(player,
+                com.balatro.net.BalatroPayloads.Screens.TABLE);
+        return 1;
+    }
+
+    /** Открывает магазин. */
+    private static int openShop(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Команда доступна только игроку"));
+            return 0;
+        }
+        RunState run = BalatroMod.runOf(player);
+        if (run == null) {
+            source.sendFailure(Component.literal("Активного забега нет"));
+            return 0;
+        }
+        BalatroNetworking.sync(player);
+        BalatroNetworking.openScreen(player,
+                com.balatro.net.BalatroPayloads.Screens.SHOP);
+        return 1;
+    }
+
     private static int status(CommandSourceStack source) {
         ServerPlayer player = source.getPlayer();
         if (player == null) {
@@ -105,11 +149,32 @@ public final class BalatroCommand {
                 + " | Деньги: $" + run.money()), false);
         source.sendSuccess(() -> Component.literal("Джокеры: " + run.jokers().size() + " / "
                 + run.jokerSlots()), false);
+        source.sendSuccess(() -> Component.literal("Фаза: " + phaseName(run.phase())
+                + " | Колода: " + run.deck().totalSize() + " карт"), false);
+        if (run.bossBlind() != com.balatro.core.blind.BossBlind.NONE) {
+            source.sendSuccess(() -> Component.literal("Босс: " + run.bossBlind().displayName()
+                            + " — " + BossRules.description(run.bossBlind())),
+                    false);
+        }
         if (run.gameOver()) {
             source.sendSuccess(() -> Component.literal("ЗАБЕГ ПРОИГРАН")
                     .withStyle(ChatFormatting.RED), false);
+        } else if (run.phase() == RunPhase.GAME_WON) {
+            source.sendSuccess(() -> Component.literal("ЗАБЕГ ПРОЙДЕН")
+                    .withStyle(ChatFormatting.GREEN), false);
         }
         return 1;
+    }
+
+    private static String phaseName(RunPhase phase) {
+        return switch (phase) {
+            case PLAYING -> "игра";
+            case SHOP -> "магазин";
+            case BLIND_SELECT -> "выбор слепого";
+            case GAME_OVER -> "поражение";
+            case GAME_WON -> "победа";
+            case DECK_SELECT -> "выбор колоды";
+        };
     }
 
     private static int listDecks(CommandSourceStack source) {

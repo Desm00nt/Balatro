@@ -17,15 +17,28 @@ public final class ScoringContext {
     private final int handLevel;
     private final int discardsUsed;
     private final RunView run;
+    private final int extraCardSlots;
 
     public ScoringContext(List<Card> played, List<Card> held, HandType handType,
                           int handLevel, int discardsUsed, RunView run) {
+        this(played, held, handType, handLevel, discardsUsed, run, 0);
+    }
+
+    public ScoringContext(List<Card> played, List<Card> held, HandType handType,
+                          int handLevel, int discardsUsed, RunView run,
+                          int extraCardSlots) {
         this.played = played;
         this.held = held;
         this.handType = handType;
         this.handLevel = handLevel;
         this.discardsUsed = discardsUsed;
         this.run = run;
+        this.extraCardSlots = extraCardSlots;
+    }
+
+    /** Дополнительные слоты карт (купон DNA). */
+    public int extraCardSlots() {
+        return extraCardSlots;
     }
 
     public List<Card> played() {

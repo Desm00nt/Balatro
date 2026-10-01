@@ -38,7 +38,7 @@ tasks.named('test', Test) {
 	enabled = false
 }
 
-// ./gradlew coreTest — 78 проверок игровой логики
+// ./gradlew coreTest — базовые проверки игровой логики
 tasks.register('coreTest', JavaExec) {
 	group = 'verification'
 	description = 'Runs the standalone core game logic tests'
@@ -46,9 +46,17 @@ tasks.register('coreTest', JavaExec) {
 	mainClass = 'com.balatro.core.CoreTest'
 }
 
-// Прогоняем тесты ядра перед remapJar, чтобы сборка падала на ошибках логики.
+// ./gradlew featureTest — магазин, купоны, боссы, таро, сохранение
+tasks.register('featureTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs the feature tests (shop, vouchers, bosses, tarot, saving)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.balatro.core.FeatureTest'
+}
+
+// Прогоняем тесты ядра перед сборкой, чтобы падать на ошибках логики.
 tasks.named('build') {
-	dependsOn 'coreTest'
+	dependsOn 'coreTest', 'featureTest'
 }
 
 dependencies {

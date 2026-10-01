@@ -1,33 +1,78 @@
 package com.balatro.client;
 
-import com.balatro.core.run.RunState;
+import com.balatro.core.run.RunSnapshot;
+import com.balatro.net.BalatroPayloads;
+import com.balatro.storage.RunNbt;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-/** Клиентская инициализация. */
+/**
+ * Клиентская часть мода: принимает состояние забега с сервера
+ * и открывает нужные экраны. Логика игры здесь не выполняется.
+ */
 public class BalatroClient implements ClientModInitializer {
 
-    /**
-     * Открытый на клиенте забег. GUI работает с этой копией,
-     * а не ходит на сервер каждый кадр.
-     */
-    public static final Map<String, RunState> OPEN_RUNS = new ConcurrentHashMap<>();
+    /** Последнее состояние, полученное от сервера. */
+    private static RunSnapshot state;
+    private static String screenToOpen;
 
     @Override
     public void onInitializeClient() {
-        // Сетевые пакеты и рендереры добавляются в следующих версиях.
+        ClientPlayNetworking.registerGlobalReceiver(BalatroPayloads.StateS2C.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    state = RunNbt.fromNbt(payload.tag());
+                }));
+
+        ClientPlayNetworking.registerGlobalReceiver(BalatroPayloads.OpenScreenS2C.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    screenToOpen = payload.screen();
+                    openPendingScreen();
+                }));
+
+        // Сбрасываем состояние при выходе с сервера.
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            state = null;
+            screenToOpen = null;
+        });
     }
 
-    /** Открывает игровой стол для локального забега. */
-    public static void openTable(RunState run) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.player == null) {
+    /** Состояние забега на клиенте (может быть null). */
+    public static RunSnapshot state() {
+        return state;
+    }
+
+    /** Открывает экран, если его запросил сервер. */
+    private static void openPendingScreen() {
+        if (screenToOpen == null) {
             return;
         }
-        OPEN_RUNS.put(client.player.getGameProfile().getName(), run);
-        client.setScreen(new com.balatro.client.screen.BalatroScreen(run));
+        String screen = screenToOpen;
+        screenToOpen = null;
+        if (state == null) {
+            return;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (screen.equals(BalatroPayloads.Screens.SHOP)) {
+            client.setScreen(new com.balatro.client.screen.ShopScreen(state));
+        } else {
+            client.setScreen(new com.balatro.client.screen.BalatroScreen(state));
+        }
+    }
+
+    /** Отправляет действие серверу с выбранными индексами карт. */
+    public static void sendAction(String action, int... selection) {
+        java.util.List<Integer> list = new java.util.ArrayList<>();
+        for (int i : selection) {
+            list.add(i);
+        }
+        ClientPlayNetworking.send(new BalatroPayloads.ActionC2S(action, list));
+    }
+
+    /** Компактный NBT последнего состояния (для отладки). */
+    public static CompoundTag debugTag() {
+        return state == null ? new CompoundTag() : RunNbt.toNbt(state);
     }
 }

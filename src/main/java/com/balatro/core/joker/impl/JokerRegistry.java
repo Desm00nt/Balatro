@@ -56,6 +56,8 @@ public final class JokerRegistry {
                 JokerRarity.RARE, 4));
         register(JokerFactory.comboJoker("crafty", "Crafty Joker", HandType.FLUSH, 80, 0,
                 JokerRarity.RARE, 4));
+        // Расширенный набор (30 карт).
+        ExpandedJokers.all().forEach(JokerRegistry::register);
     }
 
     private JokerRegistry() {

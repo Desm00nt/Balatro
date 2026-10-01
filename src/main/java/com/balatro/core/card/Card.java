@@ -17,13 +17,23 @@ public final class Card {
     private final boolean debuffed;
     /** Аура-реакция на конкретный ранг/масть, задаваемая джокером. */
     private final int forcedRankOrder;
+    private final CardEdition edition;
+    private final CardSeal seal;
 
     public Card(Rank rank, Suit suit) {
-        this(rank, suit, 0, 0, new String[0], false, 0);
+        this(rank, suit, 0, 0, new String[0], false, 0,
+                CardEdition.NONE, CardSeal.NONE);
     }
 
     public Card(Rank rank, Suit suit, int bonusChips, int bonusMult,
                 String[] bonusEffects, boolean debuffed, int forcedRankOrder) {
+        this(rank, suit, bonusChips, bonusMult, bonusEffects, debuffed, forcedRankOrder,
+                CardEdition.NONE, CardSeal.NONE);
+    }
+
+    public Card(Rank rank, Suit suit, int bonusChips, int bonusMult,
+                String[] bonusEffects, boolean debuffed, int forcedRankOrder,
+                CardEdition edition, CardSeal seal) {
         this.rank = rank;
         this.suit = suit;
         this.bonusChips = bonusChips;
@@ -31,6 +41,30 @@ public final class Card {
         this.bonusEffects = bonusEffects;
         this.debuffed = debuffed;
         this.forcedRankOrder = forcedRankOrder;
+        this.edition = edition == null ? CardEdition.NONE : edition;
+        this.seal = seal == null ? CardSeal.NONE : seal;
+    }
+
+    /** Копия карты с другим изданием/печатью. */
+    private Card with(CardEdition newEdition, CardSeal newSeal) {
+        return new Card(rank, suit, bonusChips, bonusMult, bonusEffects, debuffed,
+                forcedRankOrder, newEdition, newSeal);
+    }
+
+    public CardEdition edition() {
+        return edition;
+    }
+
+    public CardSeal seal() {
+        return seal;
+    }
+
+    public Card withEdition(CardEdition newEdition) {
+        return with(newEdition, seal);
+    }
+
+    public Card withSeal(CardSeal newSeal) {
+        return with(edition, newSeal);
     }
 
     public Rank rank() {
@@ -90,42 +124,90 @@ public final class Card {
 
     public Card withBonusChips(int delta) {
         return new Card(rank, suit, bonusChips + delta, bonusMult,
-                bonusEffects, debuffed, forcedRankOrder);
+                bonusEffects, debuffed, forcedRankOrder, edition, seal);
     }
 
     public Card withBonusMult(int delta) {
         return new Card(rank, suit, bonusChips, bonusMult + delta,
-                bonusEffects, debuffed, forcedRankOrder);
+                bonusEffects, debuffed, forcedRankOrder, edition, seal);
     }
 
     public Card withEffect(String effectId) {
         String[] copy = new String[bonusEffects.length + 1];
         System.arraycopy(bonusEffects, 0, copy, 0, bonusEffects.length);
         copy[bonusEffects.length] = effectId;
-        return new Card(rank, suit, bonusChips, bonusMult, copy, debuffed, forcedRankOrder);
+        return new Card(rank, suit, bonusChips, bonusMult, copy, debuffed,
+                forcedRankOrder, edition, seal);
     }
 
     public Card withSuit(Suit newSuit) {
         return new Card(rank, newSuit, bonusChips, bonusMult,
-                bonusEffects, debuffed, forcedRankOrder);
+                bonusEffects, debuffed, forcedRankOrder, edition, seal);
     }
 
     public Card withRank(Rank newRank) {
         return new Card(newRank, suit, bonusChips, bonusMult,
-                bonusEffects, debuffed, forcedRankOrder);
+                bonusEffects, debuffed, forcedRankOrder, edition, seal);
+    }
+
+    /** Устанавливает переопределение ранга (таро The Hanged Man). */
+    public Card withForcedOrder(int order) {
+        return new Card(rank, suit, bonusChips, bonusMult, bonusEffects, debuffed,
+                order, edition, seal);
     }
 
     public Card debuffed(boolean value) {
-        return new Card(rank, suit, bonusChips, bonusMult, bonusEffects, value, forcedRankOrder);
+        return new Card(rank, suit, bonusChips, bonusMult, bonusEffects, value,
+                forcedRankOrder, edition, seal);
     }
 
     /** Убирает все гейминг-эффекты, оставляя голую карту (таро Death). */
     public Card stripped() {
-        return new Card(rank, suit, 0, 0, new String[0], debuffed, 0);
+        return new Card(rank, suit, 0, 0, new String[0], debuffed, 0,
+                edition, seal);
+    }
+
+    /** Полностью очищает карту, включая издание и печать. */
+    public Card plain() {
+        return new Card(rank, suit, 0, 0, new String[0], debuffed, 0,
+                CardEdition.NONE, CardSeal.NONE);
+    }
+
+    /** Копия этой же карты, но другой масти (для поиска замен в колоде). */
+    public Card copyWith(Suit newSuit) {
+        return new Card(rank, newSuit, bonusChips, bonusMult, bonusEffects, debuffed,
+                forcedRankOrder, edition, seal);
+    }
+
+    /** Сработает ли издание Lucky: сумма фишек и множителя карты равна 7. */
+    public boolean isLucky(com.balatro.core.joker.ScoringContext ctx) {
+        if (ctx == null) {
+            return false;
+        }
+        int sum = rank.chips() + bonusChips + bonusMult;
+        return sum == 7;
+    }
+
+    /** Сколько копий этой карты в колоде (для издания Crowded). */
+    public int copiesInDeck(com.balatro.core.joker.ScoringContext ctx) {
+        if (ctx == null || ctx.run() == null) {
+            return 1;
+        }
+        return Math.max(1, ctx.run().copiesOf(this));
+    }
+
+    /** Осталась ли карта в руке (для издания Glass). */
+    public boolean isHeld(com.balatro.core.joker.ScoringContext ctx) {
+        return ctx != null && ctx.held().contains(this);
     }
 
     public String displayName() {
         return rank.symbol() + String.valueOf(suit.symbol());
+    }
+
+    /** Уникальный ключ вида "HA" без учёта модификаторов. */
+    public String key() {
+        return rank.name() + "_" + suit.name();
     }
 
     @Override

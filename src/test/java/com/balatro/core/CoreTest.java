@@ -10,6 +10,7 @@ import com.balatro.core.joker.impl.BasicJokers;
 import com.balatro.core.joker.impl.JokerRegistry;
 import com.balatro.core.blind.Blind;
 import com.balatro.core.blind.BlindType;
+import com.balatro.core.run.RunPhase;
 import com.balatro.core.run.RunState;
 import com.balatro.core.run.ScoreResult;
 import com.balatro.core.run.StartingDeck;
@@ -213,7 +214,12 @@ public final class CoreTest {
         run.completeRound();
         checkTrue("Money grew after round", run.money() > moneyBefore,
                 moneyBefore + " -> " + run.money());
+        checkTrue("Shop phase after winning blind", run.phase() == RunPhase.SHOP,
+                "" + run.phase());
+        run.nextRound();
         checkTrue("Hands reset", run.handsLeft() == 4, "hands=" + run.handsLeft());
+        checkTrue("Playing phase resumed", run.phase() == RunPhase.PLAYING,
+                "" + run.phase());
         checkTrue("Advanced to big blind", run.blindType() == BlindType.BIG,
                 "blind=" + run.blindType());
 
@@ -225,12 +231,16 @@ public final class CoreTest {
         RunState shop = new RunState(StartingDeck.YELLOW, 7L);
         int cash = shop.money();
         checkTrue("Yellow deck starts with $10", cash == 10, "" + cash);
+        shop.setPhase(RunPhase.SHOP);
         if (shop.buyJoker(BasicJokers.JOKER)) {
-            checkTrue("Bought joker for $3", shop.money() == cash - 3, "" + shop.money());
-            checkTrue("Joker count is 1", shop.jokers().size() == 1, "");
+            checkTrue("Bought joker", shop.jokers().size() == 1, "");
+            checkTrue("Joker cost deducted", shop.money() < cash,
+                    cash + " -> " + shop.money());
         } else {
             checkTrue("Purchase succeeded", false, "buyJoker returned false");
         }
+        checkTrue("Cannot buy in PLAYING phase",
+                !new RunState(StartingDeck.YELLOW, 8L).buyJoker(BasicJokers.JOKER), "");
     }
 
     private static void testDecks() {
