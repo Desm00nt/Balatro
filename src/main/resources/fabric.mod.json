@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "balatro",
+  "version": "${version}",
+  "name": "Balatro",
+  "description": "Покерный roguelike-режим Balatro прямо внутри Minecraft: колода, джокеры, таро и слепые.",
+  "authors": [
+    "Desm00nt"
+  ],
+  "contact": {
+    "sources": "https://github.com/Desm00nt/Balatro"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.balatro.BalatroMod"
+    ],
+    "client": [
+      "com.balatro.client.BalatroClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
