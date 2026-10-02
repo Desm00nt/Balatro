@@ -16,11 +16,11 @@ public final class BalatroNetworking {
     }
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(BalatroPayloads.StateS2C.ID,
+        PayloadTypeRegistry.clientboundPlay().register(BalatroPayloads.StateS2C.ID,
                 BalatroPayloads.StateS2C.CODEC);
-        PayloadTypeRegistry.playS2C().register(BalatroPayloads.OpenScreenS2C.ID,
+        PayloadTypeRegistry.clientboundPlay().register(BalatroPayloads.OpenScreenS2C.ID,
                 BalatroPayloads.OpenScreenS2C.CODEC);
-        PayloadTypeRegistry.playC2S().register(BalatroPayloads.ActionC2S.ID,
+        PayloadTypeRegistry.serverboundPlay().register(BalatroPayloads.ActionC2S.ID,
                 BalatroPayloads.ActionC2S.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(BalatroPayloads.ActionC2S.ID,
@@ -30,7 +30,7 @@ public final class BalatroNetworking {
 
     /** Отправляет клиенту полное состояние забега и сохраняет его. */
     public static void sync(ServerPlayer player) {
-        BalatroRunData data = BalatroRunData.get(player.server);
+        BalatroRunData data = BalatroRunData.get(player.level().getServer());
         RunState run = data.get(player);
         if (run == null) {
             return;
@@ -48,7 +48,7 @@ public final class BalatroNetworking {
     }
 
     private static void handleAction(BalatroPayloads.ActionC2S payload, ServerPlayer player) {
-        BalatroRunData data = BalatroRunData.get(player.server);
+        BalatroRunData data = BalatroRunData.get(player.level().getServer());
         RunState run = data.get(player);
         if (run == null) {
             return;

@@ -56,9 +56,9 @@ public class BalatroClient implements ClientModInitializer {
         }
         Minecraft client = Minecraft.getInstance();
         if (screen.equals(BalatroPayloads.Screens.SHOP)) {
-            client.setScreen(new com.balatro.client.screen.ShopScreen(state));
+            client.setScreenAndShow(new com.balatro.client.screen.ShopScreen(state));
         } else {
-            client.setScreen(new com.balatro.client.screen.BalatroScreen(state));
+            client.setScreenAndShow(new com.balatro.client.screen.BalatroScreen(state));
         }
     }
 

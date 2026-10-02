@@ -4,7 +4,7 @@ import com.balatro.core.card.Card;
 import com.balatro.core.card.CardEdition;
 import com.balatro.core.card.CardSeal;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /** Общая отрисовка карт для всех экранов мода. */
 public final class CardRenderer {
@@ -18,7 +18,7 @@ public final class CardRenderer {
     }
 
     /** Рисует карту в координатах (x, y). */
-    public static void draw(GuiGraphics g, Font font, Card card, int x, int y,
+    public static void draw(GuiGraphicsExtractor g, Font font, Card card, int x, int y,
                             boolean selected, boolean debuffed) {
         int top = selected ? y - LIFT : y;
         int bg = card.debuffed() || debuffed ? 0xFF3A3A3A
@@ -34,21 +34,21 @@ public final class CardRenderer {
         int textColor = (card.debuffed() || debuffed) ? 0xFF808080 : 0xFFFFFFFF;
         String rank = String.valueOf(card.rank().symbol());
         String suit = String.valueOf(card.suit().symbol());
-        g.drawString(font, rank, x + 4, top + 5, textColor, false);
-        g.drawString(font, suit, x + W - 12, top + 5, textColor, false);
-        g.drawString(font, suit, x + W / 2 - 4, top + H / 2 - 4, textColor, false);
+        g.text(font, rank, x + 4, top + 5, textColor, false);
+        g.text(font, suit, x + W - 12, top + 5, textColor, false);
+        g.text(font, suit, x + W / 2 - 4, top + H / 2 - 4, textColor, false);
 
         // Издание и печать отмечаются в углу.
         String mark = editionMark(card.edition());
         if (mark != null) {
-            g.drawString(font, mark, x + 4, top + 16, 0xFFFFD54F, false);
+            g.text(font, mark, x + 4, top + 16, 0xFFFFD54F, false);
         }
         if (!card.seal().isEmpty()) {
-            g.drawString(font, "S", x + W - 9, top + 18, 0xFF9CCC65, false);
+            g.text(font, "S", x + W - 9, top + 18, 0xFF9CCC65, false);
         }
         if (card.bonusChips() > 0 || card.bonusMult() > 0) {
             String bonus = "+" + card.bonusChips() + "/" + card.bonusMult();
-            g.drawString(font, bonus, x + 2, top + H - 12, 0xFF7CFC00, false);
+            g.text(font, bonus, x + 2, top + H - 12, 0xFF7CFC00, false);
         }
     }
 

@@ -2,57 +2,54 @@ package com.balatro.storage;
 
 import com.balatro.core.run.RunSnapshot;
 import com.balatro.core.run.RunState;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Хранит активные забеги всех игроков на диске мира.
- * Ключ — UUID игрока.
+ * Хранит активные забеги всех игроков. В Minecraft 26.x данные
+ * сохраняются через {@link SavedDataType} и {@link Codec}.
  */
 public class BalatroRunData extends SavedData {
 
-    private static final String FILE_ID = "balatro_runs";
+    /** Ключ — UUID игрока, значение — NBT снимка забега. */
     private final Map<UUID, CompoundTag> runs = new HashMap<>();
+
+    /** Кодек хранилища: карта UUID -> NBT. */
+    private static final Codec<Map<UUID, CompoundTag>> CODEC = Codec.unboundedMap(
+            net.minecraft.core.UUIDUtil.CODEC, CompoundTag.CODEC);
+
+    private static final SavedDataType<BalatroRunData> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath("balatro", "runs"),
+            BalatroRunData::new,
+            RecordCodecBuilder.create(instance -> instance.group(
+                    CODEC.fieldOf("runs").forGetter(BalatroRunData::runs)
+            ).apply(instance, BalatroRunData::new)),
+            DataFixTypes.LEVEL);
+
+    public BalatroRunData(Map<UUID, CompoundTag> runs) {
+        this.runs.putAll(runs);
+    }
 
     public BalatroRunData() {
     }
 
-    public static BalatroRunData get(net.minecraft.server.MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(Factory, FILE_ID);
+    public static BalatroRunData get(MinecraftServer server) {
+        return server.overworld().getDataStorage().computeIfAbsent(TYPE);
     }
 
-    /** Фабрика загрузки данных: конструктор, десериализатор, тип исправлений. */
-    private static final net.minecraft.world.level.saveddata.SavedData.Factory<BalatroRunData>
-            Factory = new net.minecraft.world.level.saveddata.SavedData.Factory<>(
-            BalatroRunData::new,
-            (tag, registries) -> load(tag),
-            net.minecraft.util.datafix.DataFixTypes.LEVEL);
-
-    /** Читает данные из NBT. */
-    public static BalatroRunData load(CompoundTag tag) {
-        BalatroRunData data = new BalatroRunData();
-        CompoundTag all = tag.getCompound("runs");
-        for (String key : all.getAllKeys()) {
-            try {
-                data.runs.put(java.util.UUID.fromString(key), all.getCompound(key));
-            } catch (IllegalArgumentException ignored) {
-                // Повреждённый ключ — пропускаем запись.
-            }
-        }
-        return data;
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag all = new CompoundTag();
-        runs.forEach((uuid, runTag) -> all.put(uuid.toString(), runTag));
-        tag.put("runs", all);
-        return tag;
+    private Map<UUID, CompoundTag> runs() {
+        return runs;
     }
 
     /** Сохраняет забег игрока. */

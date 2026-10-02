@@ -7,7 +7,8 @@ import com.balatro.core.run.RunSnapshot;
 import com.balatro.core.shop.BoosterPack;
 import com.balatro.core.shop.Voucher;
 import com.balatro.net.BalatroPayloads;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -18,7 +19,8 @@ public class ShopScreen extends Screen {
     private RunSnapshot state;
 
     public ShopScreen(RunSnapshot state) {
-        super(Component.literal("Shop"));
+        super(Minecraft.getInstance(), Minecraft.getInstance().font,
+                Component.literal("Shop"));
         this.state = state;
     }
 
@@ -100,27 +102,27 @@ public class ShopScreen extends Screen {
         BalatroClient.sendAction(BalatroPayloads.Actions.BUY_PACK, index);
     }
 @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
         g.fill(0, 0, width, height, 0xFF1B1327);
         renderHeader(g);
         renderJokers(g);
         renderVouchers(g);
         renderPacks(g);
-        super.render(g, mouseX, mouseY, delta);
+        super.extractRenderState(g, mouseX, mouseY, delta);
     }
 
-    private void renderHeader(GuiGraphics g) {
-        g.drawString(font, "МАГАЗИН", 12, 14, 0xFFFFE082, false);
-        g.drawString(font, "$" + state.money, width - 70, 14, 0xFFFFD54F, false);
-        g.drawString(font, "Ante " + state.ante, 12, 28, 0xFFFFFFFF, false);
+    private void renderHeader(GuiGraphicsExtractor g) {
+        g.text(font, "МАГАЗИН", 12, 14, 0xFFFFE082, false);
+        g.text(font, "$" + state.money, width - 70, 14, 0xFFFFD54F, false);
+        g.text(font, "Ante " + state.ante, 12, 28, 0xFFFFFFFF, false);
     }
 
-    private void renderJokers(GuiGraphics g) {
+    private void renderJokers(GuiGraphicsExtractor g) {
         int y = 60;
-        g.drawString(font, "Джокеры", 12, y, 0xFFFFE082, false);
+        g.text(font, "Джокеры", 12, y, 0xFFFFE082, false);
         y += 13;
         if (state.shopJokers.isEmpty()) {
-            g.drawString(font, "Нет в продаже", 12, y, 0xFF9E9E9E, false);
+            g.text(font, "Нет в продаже", 12, y, 0xFF9E9E9E, false);
             return;
         }
         for (String id : state.shopJokers) {
@@ -128,45 +130,45 @@ public class ShopScreen extends Screen {
             if (joker == null) {
                 continue;
             }
-            g.drawString(font, joker.displayName(), 12, y, 0xFFFFFFFF, false);
-            g.drawString(font, "   " + joker.description(), 12, y + 10, 0xFF9E9E9E, false);
+            g.text(font, joker.displayName(), 12, y, 0xFFFFFFFF, false);
+            g.text(font, "   " + joker.description(), 12, y + 10, 0xFF9E9E9E, false);
             y += 24;
         }
     }
 
-    private void renderVouchers(GuiGraphics g) {
+    private void renderVouchers(GuiGraphicsExtractor g) {
         int x = width / 2;
         int y = 60;
-        g.drawString(font, "Купоны", x, y, 0xFFFFE082, false);
+        g.text(font, "Купоны", x, y, 0xFFFFE082, false);
         y += 13;
         if (state.shopVouchers.isEmpty()) {
-            g.drawString(font, "Нет в продаже", x, y, 0xFF9E9E9E, false);
+            g.text(font, "Нет в продаже", x, y, 0xFF9E9E9E, false);
             return;
         }
         for (Voucher v : state.shopVouchers) {
-            g.drawString(font, v.displayName(), x, y, 0xFFFFFFFF, false);
-            g.drawString(font, "   " + v.description(), x, y + 10, 0xFF9E9E9E, false);
+            g.text(font, v.displayName(), x, y, 0xFFFFFFFF, false);
+            g.text(font, "   " + v.description(), x, y + 10, 0xFF9E9E9E, false);
             y += 24;
         }
     }
 
-    private void renderPacks(GuiGraphics g) {
+    private void renderPacks(GuiGraphicsExtractor g) {
         int x = width - 190;
         int y = 60;
-        g.drawString(font, "Пакеты", x, y, 0xFFFFE082, false);
+        g.text(font, "Пакеты", x, y, 0xFFFFE082, false);
         y += 13;
         if (state.shopPacks.isEmpty()) {
-            g.drawString(font, "Нет в продаже", x, y, 0xFF9E9E9E, false);
+            g.text(font, "Нет в продаже", x, y, 0xFF9E9E9E, false);
             return;
         }
         for (String name : state.shopPacks) {
             try {
                 BoosterPack pack = BoosterPack.valueOf(name);
-                g.drawString(font, pack.displayName(), x, y, 0xFFFFFFFF, false);
-                g.drawString(font, "   " + pack.cardCount() + " карт, выбрать "
+                g.text(font, pack.displayName(), x, y, 0xFFFFFFFF, false);
+                g.text(font, "   " + pack.cardCount() + " карт, выбрать "
                         + pack.picks(), x, y + 10, 0xFF9E9E9E, false);
             } catch (IllegalArgumentException e) {
-                g.drawString(font, name, x, y, 0xFFFFFFFF, false);
+                g.text(font, name, x, y, 0xFFFFFFFF, false);
             }
             y += 24;
         }

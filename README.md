@@ -1,7 +1,7 @@
 # Balatro для Minecraft
 
 Полный порт покерного roguelike **Balatro** как одиночного игрового режима
-внутри Minecraft. Fabric, Minecraft 1.21, Java 21.
+внутри Minecraft. Fabric, Minecraft 26.2, Java 25.
 
 Игра полностью серверная: клиент только рисует состояние, все решения
 принимаются на сервере. Прогресс сохраняется в мир и переживает реконнект.
@@ -87,11 +87,11 @@ points = chips × mult × Π jokerMultipliers × Π editionMultipliers
 
 ```bash
 ./gradlew build
-# -> build/libs/balatro-0.1.0.jar
+# -> build/libs/balatro-0.2.0.jar
 ```
 
-Требуется JDK 21. Для запуска Gradle используется JDK 25
-(Fabric Loom 1.18 требует JVM 25, сам мод компилируется под Java 21).
+Требуется JDK 25: Minecraft 26.x собран под Java 25, и Fabric Loom 1.18
+тоже требует JVM 25 для запуска Gradle.
 
 ## Лицензия
 

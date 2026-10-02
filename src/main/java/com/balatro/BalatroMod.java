@@ -58,7 +58,7 @@ public class BalatroMod implements ModInitializer {
         if (cached != null) {
             return cached;
         }
-        RunState loaded = BalatroRunData.get(player.server).get(player);
+        RunState loaded = BalatroRunData.get(player.level().getServer()).get(player);
         if (loaded != null) {
             RUNS.put(player.getUUID(), loaded);
         }
@@ -72,12 +72,12 @@ public class BalatroMod implements ModInitializer {
     public static void startRun(ServerPlayer player, StartingDeck deck) {
         RunState run = new RunState(deck, System.nanoTime());
         RUNS.put(player.getUUID(), run);
-        BalatroRunData.get(player.server).put(player, run);
+        BalatroRunData.get(player.level().getServer()).put(player, run);
     }
 
     public static void endRun(ServerPlayer player) {
         RUNS.remove(player.getUUID());
-        BalatroRunData.get(player.server).remove(player);
+        BalatroRunData.get(player.level().getServer()).remove(player);
     }
 
     public static boolean hasRun(ServerPlayer player) {

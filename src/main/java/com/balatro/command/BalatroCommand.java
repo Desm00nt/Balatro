@@ -13,6 +13,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Команда {@code /balatro} для управления забегом. */
@@ -28,8 +29,13 @@ public final class BalatroCommand {
     }
 
     private static void registerOnServer(CommandDispatcher<CommandSourceStack> dispatcher) {
+        // Игра рассчитана на одиночную игру, поэтому команда доступна всем:
+        // достаточно иметь разрешение уровня ALL (как у обычного игрока).
+        Permission commandLevel =
+                new net.minecraft.server.permissions.Permission.HasCommandLevel(
+                        net.minecraft.server.permissions.PermissionLevel.ALL);
         dispatcher.register(Commands.literal("balatro")
-                .requires(src -> src.hasPermission(0))
+                .requires(src -> src.permissions().hasPermission(commandLevel))
                 .then(Commands.literal("start")
                         .executes(ctx -> start(ctx.getSource(),
                                 StartingDeck.RED.displayName()))
