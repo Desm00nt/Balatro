@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +15,7 @@ public final class BalatroPayloads {
     /** Полное состояние забега: сервер отправляет клиенту. */
     public record StateS2C(CompoundTag tag) implements CustomPacketPayload {
 
-        public static final Type<StateS2C> ID =
-                CustomPacketPayload.createType(ResourceIds.STATE);
+        public static final Type<StateS2C> ID = ResourceIds.type("state");
         public static final StreamCodec<RegistryFriendlyByteBuf, StateS2C> CODEC =
                 StreamCodec.of((buf, value) -> buf.writeNbt(value.tag()),
                         buf -> new StateS2C(buf.readNbt()));
@@ -29,8 +29,7 @@ public final class BalatroPayloads {
     /** Открытие экрана игры. */
     public record OpenScreenS2C(String screen) implements CustomPacketPayload {
 
-        public static final Type<OpenScreenS2C> ID =
-                CustomPacketPayload.createType(ResourceIds.OPEN);
+        public static final Type<OpenScreenS2C> ID = ResourceIds.type("open");
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenScreenS2C> CODEC =
                 StreamCodec.of((buf, value) -> buf.writeUtf(value.screen()),
                         buf -> new OpenScreenS2C(buf.readUtf()));
@@ -45,8 +44,7 @@ public final class BalatroPayloads {
     public record ActionC2S(String action, List<Integer> selection)
             implements CustomPacketPayload {
 
-        public static final Type<ActionC2S> ID =
-                CustomPacketPayload.createType(ResourceIds.ACTION);
+        public static final Type<ActionC2S> ID = ResourceIds.type("action");
         public static final StreamCodec<RegistryFriendlyByteBuf, ActionC2S> CODEC =
                 StreamCodec.of((buf, value) -> {
                     buf.writeUtf(value.action());
@@ -71,13 +69,23 @@ public final class BalatroPayloads {
         }
     }
 
-    /** Идентификаторы сетевых каналов. */
+    /**
+     * Идентификаторы сетевых каналов.
+     *
+     * <p>В 26.2 конструктору {@link CustomPacketPayload.Type} нужно передавать
+     * готовый {@link Identifier}: {@code createType(String)} принимает только путь
+     * и всегда подставляет пространство имён {@code minecraft}, из-за чего строка
+     * вида {@code "balatro:state} вызывает IdentifierException.
+     */
     public static final class ResourceIds {
-        public static final String STATE = "balatro:state";
-        public static final String ACTION = "balatro:action";
-        public static final String OPEN = "balatro:open";
 
         private ResourceIds() {
+        }
+
+        /** Создаёт тип пакета с пространством имён {@code balatro}. */
+        public static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> type(String path) {
+            return new CustomPacketPayload.Type<>(
+                    Identifier.fromNamespaceAndPath("balatro", path));
         }
     }
 
